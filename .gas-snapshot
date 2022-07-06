@@ -1,0 +1,7 @@
+BoredAndDangerousTest:testDutchAuctionMint() (gas: 119168)
+BoredAndDangerousTest:testDutchAuctionRefund() (gas: 196751911)
+BoredAndDangerousTest:testOwnerMint() (gas: 77852)
+BoredAndDangerousTest:testWritelistApes() (gas: 276)
+BoredAndDangerousTest:testWritelistMintGiveawayBatch() (gas: 15726100)
+BoredAndDangerousTest:testWritelistMintGiveawayMass() (gas: 15501666)
+BoredAndDangerousTest:testWritelistMintWritersRoom() (gas: 253)
