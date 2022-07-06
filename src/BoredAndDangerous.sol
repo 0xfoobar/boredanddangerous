@@ -7,27 +7,26 @@ import {ERC2981} from "openzeppelin-contracts/contracts/token/common/ERC2981.sol
 import {MerkleProof} from "openzeppelin-contracts/contracts/utils/cryptography/MerkleProof.sol";
 import {Strings} from "openzeppelin-contracts/contracts/utils/Strings.sol";
 
-
 interface IERC721 {
-    function ownerOf(uint tokenId) external view returns (address);
+    function ownerOf(uint256 tokenId) external view returns (address);
 }
-
 
 contract BoredAndDangerous is ERC721, ERC2981 {
     /// @notice The original writer's room contract
-    address public constant WRITERS_ROOM = 0x880644ddF208E471C6f2230d31f9027578FA6FcC;
+    address public constant WRITERS_ROOM =
+        0x880644ddF208E471C6f2230d31f9027578FA6FcC;
 
     /// @notice The grace period for refund claiming
-    uint public constant DUTCH_AUCTION_GRACE_PERIOD = 12 hours;
+    uint256 public constant DUTCH_AUCTION_GRACE_PERIOD = 12 hours;
     /// @notice The mint cap in the dutch auction
-    uint public constant DUTCH_AUCTION_MINT_CAP = 2;
+    uint256 public constant DUTCH_AUCTION_MINT_CAP = 2;
     /// @notice The first token id that dutch auction minters will receive, inclusive
-    uint public immutable DUTCH_AUCTION_START_ID;
+    uint256 public immutable DUTCH_AUCTION_START_ID;
     /// @notice The last token id that dutch auction minters will receive, inclusive
-    uint public immutable DUTCH_AUCTION_END_ID;
+    uint256 public immutable DUTCH_AUCTION_END_ID;
 
     /// @notice The price for writelist mints
-    uint public writelistPrice;
+    uint256 public writelistPrice;
 
     /// @notice The address which can admin mint for free, set merkle roots, and set auction params
     address public mintingOwner;
@@ -45,9 +44,9 @@ contract BoredAndDangerous is ERC721, ERC2981 {
     DutchAuctionFinalization public dutchEnd;
 
     /// @notice The token id which will be minted next in the dutch auction
-    uint public dutchAuctionNextId;
+    uint256 public dutchAuctionNextId;
     /// @notice The token id which will be minted next in the writelist mint
-    uint public writelistMintNextId;
+    uint256 public writelistMintNextId;
 
     /// @notice Records whether a whitelist allocation has been started, and how many are remaining to claim
     struct Writelist {
@@ -62,20 +61,20 @@ contract BoredAndDangerous is ERC721, ERC2981 {
     bool public writelistMintWritersRoomOpen;
 
     /// @notice Construct this from (address, amount) tuple elements
-    bytes32 public giveawayMerkleRoot = "";
+    bytes32 public giveawayMerkleRoot;
     /// @notice Caches writelist allocations once they've been used
     mapping(address => Writelist) public giveawayWritelist;
 
     /// @notice Construct this from (address, tokenId) tuple elements
-    bytes32 public apeMerkleRoot = "";
+    bytes32 public apeMerkleRoot;
     /// @notice Maps (address, tokenId) hash to bool, true if token has minted
     mapping(bytes32 => bool) public apeWritelistUsed;
 
     /// @notice Maps tokenId to bool, true if token has minted
-    mapping(uint => bool) public writersroomWritelistUsed;
+    mapping(uint256 => bool) public writersroomWritelistUsed;
 
     /// @notice Total number of tokens which have minted
-    uint public totalSupply = 0;
+    uint256 public totalSupply;
 
     /// @notice The prefix to attach to the tokenId to get the metadata uri
     string public baseTokenURI;
@@ -102,7 +101,7 @@ contract BoredAndDangerous is ERC721, ERC2981 {
     DutchAuctionParams public params;
 
     /// @notice Emitted when a token is minted
-    event Mint(address indexed owner, uint indexed tokenId);
+    event Mint(address indexed owner, uint256 indexed tokenId);
     /// @notice Emitted when an accounts receives its dutch auction refund
     event DutchAuctionRefund(address indexed account);
 
@@ -115,7 +114,7 @@ contract BoredAndDangerous is ERC721, ERC2981 {
     /// @notice Raised when the mint has not reached the required timestamp
     error MintNotOpen();
     /// @notice Raised when the user attempts to writelist mint on behalf of a token they do not own
-    error DoesNotOwnToken(uint tokenId);
+    error DoesNotOwnToken(uint256 tokenId);
     /// @notice Raised when the user attempts to mint after the dutch auction finishes
     error DutchAuctionOver();
     /// @notice Raised when the admin attempts to withdraw funds before the dutch auction grace period has ended
@@ -135,7 +134,9 @@ contract BoredAndDangerous is ERC721, ERC2981 {
     /// @notice Raised when the user attempts to mint zero items
     error MintZero();
 
-    constructor(uint _DUTCH_AUCTION_START_ID, uint _DUTCH_AUCTION_END_ID) ERC721("BoredAndDangerous", "BOOK") {
+    constructor(uint256 _DUTCH_AUCTION_START_ID, uint256 _DUTCH_AUCTION_END_ID)
+        ERC721("BoredAndDangerous", "BOOK")
+    {
         DUTCH_AUCTION_START_ID = _DUTCH_AUCTION_START_ID;
         DUTCH_AUCTION_END_ID = _DUTCH_AUCTION_END_ID;
         dutchAuctionNextId = _DUTCH_AUCTION_START_ID;
@@ -146,38 +147,53 @@ contract BoredAndDangerous is ERC721, ERC2981 {
     }
 
     /// @notice Admin mint a token
-    function ownerMint(address recipient, uint tokenId) external {
+    function ownerMint(address recipient, uint256 tokenId) external {
         if (msg.sender != mintingOwner) {
             revert AccessControl();
         }
 
-        if (DUTCH_AUCTION_START_ID <= tokenId && tokenId <= DUTCH_AUCTION_END_ID) {
+        if (
+            DUTCH_AUCTION_START_ID <= tokenId && tokenId <= DUTCH_AUCTION_END_ID
+        ) {
             revert DutchAuctionNotOverAdmin();
         }
 
-        ++totalSupply;
+        // cannot feasibly overflow
+        unchecked {
+            ++totalSupply;
+        }
+
         _mint(recipient, tokenId);
     }
 
     /// @notice Admin mint a batch of tokens
-    function ownerMintBatch(address[] calldata recipients, uint[] calldata tokenIds) external {
+    function ownerMintBatch(
+        address[] calldata recipients,
+        uint256[] calldata tokenIds
+    ) external {
         if (msg.sender != mintingOwner) {
             revert AccessControl();
         }
-        
+
         if (recipients.length != tokenIds.length) {
             revert MismatchedArrays();
         }
 
-        totalSupply += tokenIds.length;
-        for (uint i = 0; i < tokenIds.length; ++i) {
-            if (DUTCH_AUCTION_START_ID <= tokenIds[i] && tokenIds[i] <= DUTCH_AUCTION_END_ID) {
-                revert DutchAuctionNotOverAdmin();
+        // cannot feasibly overflow
+        unchecked {
+            totalSupply += tokenIds.length;
+            for (uint256 i = 0; i < tokenIds.length; ++i) {
+                if (
+                    DUTCH_AUCTION_START_ID <= tokenIds[i] &&
+                    tokenIds[i] <= DUTCH_AUCTION_END_ID
+                ) {
+                    revert DutchAuctionNotOverAdmin();
+                }
+                _mint(recipients[i], tokenIds[i]);
             }
-            _mint(recipients[i], tokenIds[i]);
         }
     }
-    
+
     ///////////////////
     // DUTCH AUCTION //
     ///////////////////
@@ -185,10 +201,13 @@ contract BoredAndDangerous is ERC721, ERC2981 {
     /// @notice The current dutch auction price
     /// @dev Reverts if dutch auction has not started yet
     /// @dev Returns the end price even if the dutch auction has sold out
-    function dutchAuctionPrice() public view returns (uint) {
+    function dutchAuctionPrice() public view returns (uint256) {
         DutchAuctionParams memory _params = params;
-        uint numIncrements = (block.timestamp - _params.startTime) / _params.timeIncrement;
-        uint price = _params.startPrice - numIncrements * _params.priceIncrement;
+        uint256 numIncrements = (block.timestamp - _params.startTime) /
+            _params.timeIncrement;
+        uint256 price = _params.startPrice -
+            numIncrements *
+            _params.priceIncrement;
         if (price < _params.endPrice) {
             price = _params.endPrice;
         }
@@ -197,7 +216,7 @@ contract BoredAndDangerous is ERC721, ERC2981 {
 
     /// @notice Dutch auction with refunds
     /// @param amount The number of NFTs to mint, either 1 or 2
-    function dutchAuctionMint(uint amount) external payable {
+    function dutchAuctionMint(uint256 amount) external payable {
         // Enforce EOA mints
         _onlyEOA(msg.sender);
 
@@ -205,7 +224,9 @@ contract BoredAndDangerous is ERC721, ERC2981 {
             revert MintZero();
         }
 
-        DutchAuctionMintHistory memory userMintHistory = mintHistory[msg.sender];
+        DutchAuctionMintHistory storage userMintHistory = mintHistory[
+            msg.sender
+        ];
 
         // Enforce per-account mint cap
         if (userMintHistory.amount + amount > DUTCH_AUCTION_MINT_CAP) {
@@ -223,10 +244,13 @@ contract BoredAndDangerous is ERC721, ERC2981 {
         if (block.timestamp < _params.startTime || _params.startPrice == 0) {
             revert MintNotOpen();
         }
-        
+
         // Calculate dutch auction price
-        uint numIncrements = (block.timestamp - _params.startTime) / _params.timeIncrement;
-        uint price = _params.startPrice - numIncrements * _params.priceIncrement;
+        uint256 numIncrements = (block.timestamp - _params.startTime) /
+            _params.timeIncrement;
+        uint256 price = _params.startPrice -
+            numIncrements *
+            _params.priceIncrement;
         if (price < _params.endPrice) {
             price = _params.endPrice;
         }
@@ -236,12 +260,15 @@ contract BoredAndDangerous is ERC721, ERC2981 {
             revert FailedToSendEther(msg.sender, address(this));
         }
         unchecked {
-            uint128 newPrice = (userMintHistory.amount * userMintHistory.price + uint128(amount * price)) / uint128(userMintHistory.amount + amount);
-            mintHistory[msg.sender] = DutchAuctionMintHistory({
-                amount: userMintHistory.amount + uint128(amount),
-                price: newPrice
-            });
-            for (uint i = 0; i < amount; ++i) {
+            uint128 newPrice = (userMintHistory.amount *
+                userMintHistory.price +
+                uint128(amount * price)) /
+                uint128(userMintHistory.amount + amount);
+
+            userMintHistory.amount += uint128(amount);
+            userMintHistory.price = newPrice;
+
+            for (uint256 i = 0; i < amount; ++i) {
                 _mint(msg.sender, dutchAuctionNextId++);
             }
             totalSupply += amount;
@@ -261,15 +288,16 @@ contract BoredAndDangerous is ERC721, ERC2981 {
         if (dutchEnd.price == 0) {
             revert DutchAuctionNotOver();
         }
-        for (uint i = 0; i < accounts.length; ++i) {
+        for (uint256 i = 0; i < accounts.length; ++i) {
             address account = accounts[i];
             DutchAuctionMintHistory memory mint = mintHistory[account];
             // If an account has already been refunded, skip instead of reverting
             // This prevents griefing attacks when performing batch refunds
             if (mint.price > 0) {
-                uint refundAmount = mint.amount * (mint.price - dutchEnd.price);
+                uint256 refundAmount = mint.amount *
+                    (mint.price - dutchEnd.price);
                 delete mintHistory[account];
-                (bool sent,) = account.call{value: refundAmount}("");
+                (bool sent, ) = account.call{value: refundAmount}("");
                 // Revert if the address has a malicious receive function
                 // This is not a griefing vector because the function can be retried
                 // without the failing recipient
@@ -285,20 +313,29 @@ contract BoredAndDangerous is ERC721, ERC2981 {
     ////////////////////////////////////////////////////////////////////////////////////////////////////
 
     /// @notice Free mint from writelist ticket allocation
-    function writelistMintWritersRoomFree(uint[] calldata tokenIds) external {
+    function writelistMintWritersRoomFree(uint256[] calldata tokenIds)
+        external
+    {
         if (!writelistMintWritersRoomFreeOpen) {
             revert MintNotOpen();
         }
-        for (uint i = 0; i < tokenIds.length; ++i) {
-            address tokenOwner = IERC721(WRITERS_ROOM).ownerOf(tokenIds[i]);
-            // This will revert is specific tokenId already minted
-            _mint(tokenOwner, tokenIds[i]);
+
+        // cannot feasibly overflow
+        unchecked {
+            for (uint256 i = 0; i < tokenIds.length; ++i) {
+                address tokenOwner = IERC721(WRITERS_ROOM).ownerOf(tokenIds[i]);
+                // This will revert is specific tokenId already minted
+                _mint(tokenOwner, tokenIds[i]);
+            }
+            totalSupply += tokenIds.length;
         }
-        totalSupply += tokenIds.length;
     }
 
     /// @notice Paid mint for a writer's room NFT
-    function writelistMintWritersRoom(uint[] calldata tokenIds) external payable {
+    function writelistMintWritersRoom(uint256[] calldata tokenIds)
+        external
+        payable
+    {
         if (!writelistMintWritersRoomOpen) {
             revert MintNotOpen();
         }
@@ -307,81 +344,113 @@ contract BoredAndDangerous is ERC721, ERC2981 {
             revert FailedToSendEther(msg.sender, address(this));
         }
 
-        for (uint i = 0; i < tokenIds.length; ++i) {
-            if (writersroomWritelistUsed[tokenIds[i]]) {
-                revert WritelistUsed();
+        // cannot overflow since we're invalidating whitelists
+        unchecked {
+            for (uint256 i = 0; i < tokenIds.length; ++i) {
+                if (writersroomWritelistUsed[tokenIds[i]]) {
+                    revert WritelistUsed();
+                }
+                writersroomWritelistUsed[tokenIds[i]] = true;
+                address tokenOwner = IERC721(WRITERS_ROOM).ownerOf(tokenIds[i]);
+                _mint(tokenOwner, writelistMintNextId++);
             }
-            writersroomWritelistUsed[tokenIds[i]] = true;
-            address tokenOwner = IERC721(WRITERS_ROOM).ownerOf(tokenIds[i]);
-            _mint(tokenOwner, writelistMintNextId++);
+            totalSupply += tokenIds.length;
         }
-        totalSupply += tokenIds.length;
     }
 
     /// @notice Mint for a licensed bored ape or mutant ape
-    function writelistMintApes(address tokenContract, uint tokenId, bytes32 leaf, bytes32[] memory proof) external payable {
+    function writelistMintApes(
+        address tokenContract,
+        uint256 tokenId,
+        bytes32 leaf,
+        bytes32[] memory proof
+    ) external payable {
         // Check payment
         if (msg.value != writelistPrice) {
             revert FailedToSendEther(msg.sender, address(this));
         }
-        
+
         bytes32 tokenHash = keccak256(abi.encodePacked(tokenContract, tokenId));
-        
+
         // Create storage element tracking user mints if this is the first mint for them
         if (apeWritelistUsed[tokenHash]) {
             revert WritelistUsed();
         }
         // Verify that (tokenContract, tokenId) correspond to Merkle leaf
-        require(tokenHash == leaf, "Token contract and id don't match Merkle leaf");
+        require(
+            tokenHash == leaf,
+            "Token contract and id don't match Merkle leaf"
+        );
 
         // Verify that (leaf, proof) matches the Merkle root
-        require(verify(apeMerkleRoot, leaf, proof), "Not a valid leaf in the Merkle tree");
+        require(
+            verify(apeMerkleRoot, leaf, proof),
+            "Not a valid leaf in the Merkle tree"
+        );
 
         // Get the current tokenOwner and mint to them
         address tokenOwner = IERC721(tokenContract).ownerOf(tokenId);
 
         apeWritelistUsed[tokenHash] = true;
-        ++totalSupply;
 
-        _mint(tokenOwner, writelistMintNextId++);
+        // cannot feasibly overflow
+        unchecked {
+            ++totalSupply;
+            _mint(tokenOwner, writelistMintNextId++);
+        }
     }
 
     /// @notice Mint from writelist allocation
-    function writelistMintGiveaway(address tokenOwner, uint8 amount, uint8 totalAllocation, bytes32 leaf, bytes32[] memory proof) external payable {
+    function writelistMintGiveaway(
+        address tokenOwner,
+        uint8 amount,
+        uint8 totalAllocation,
+        bytes32 leaf,
+        bytes32[] memory proof
+    ) external payable {
         // Check payment
         if (msg.value != amount * writelistPrice) {
             revert FailedToSendEther(msg.sender, address(this));
         }
 
-        Writelist memory writelist = giveawayWritelist[tokenOwner];
-        
+        Writelist storage writelist = giveawayWritelist[tokenOwner];
+
         // Create storage element tracking user mints if this is the first mint for them
-        if (!writelist.used) {    
+        if (!writelist.used) {
             // Verify that (tokenOwner, amount) correspond to Merkle leaf
-            require(keccak256(abi.encodePacked(tokenOwner, totalAllocation)) == leaf, "Sender and amount don't match Merkle leaf");
+            require(
+                keccak256(abi.encodePacked(tokenOwner, totalAllocation)) ==
+                    leaf,
+                "Sender and amount don't match Merkle leaf"
+            );
 
             // Verify that (leaf, proof) matches the Merkle root
-            require(verify(giveawayMerkleRoot, leaf, proof), "Not a valid leaf in the Merkle tree");
+            require(
+                verify(giveawayMerkleRoot, leaf, proof),
+                "Not a valid leaf in the Merkle tree"
+            );
 
             writelist.used = true;
             // Save some gas by never writing to this slot if it will be reset to zero at method end
             if (amount != totalAllocation) {
                 writelist.remaining = totalAllocation - amount;
             }
-        }
-        else {
+        } else {
             writelist.remaining -= amount;
         }
 
-        giveawayWritelist[tokenOwner] = writelist;
         totalSupply += amount;
-        for (uint i = 0; i < amount; ++i) {
+        for (uint256 i = 0; i < amount; ++i) {
             _mint(tokenOwner, writelistMintNextId++);
         }
     }
 
     /// @notice Ensure the proof and leaf match the merkle root
-    function verify(bytes32 root, bytes32 leaf, bytes32[] memory proof) public pure returns (bool) {
+    function verify(
+        bytes32 root,
+        bytes32 leaf,
+        bytes32[] memory proof
+    ) public pure returns (bool) {
         return MerkleProof.verify(proof, root, leaf);
     }
 
@@ -414,25 +483,26 @@ contract BoredAndDangerous is ERC721, ERC2981 {
     }
 
     /// @notice Set parameters
-    function setDutchAuctionStruct(DutchAuctionParams calldata _params) external {
+    function setDutchAuctionStruct(DutchAuctionParams calldata _params)
+        external
+    {
         if (msg.sender != mintingOwner) {
             revert AccessControl();
         }
-        if (!(_params.startPrice >= _params.endPrice && _params.endPrice > 0 && _params.startTime > 0 && _params.timeIncrement > 0)) {
+        if (
+            !(_params.startPrice >= _params.endPrice &&
+                _params.endPrice > 0 &&
+                _params.startTime > 0 &&
+                _params.timeIncrement > 0)
+        ) {
             revert DutchAuctionBadParamsAdmin();
         }
-        params = DutchAuctionParams({
-            startPrice: _params.startPrice,
-            endPrice: _params.endPrice,
-            priceIncrement: _params.priceIncrement,
-            startTime: _params.startTime,
-            timeIncrement: _params.timeIncrement
-        });
+        params = _params;
     }
 
     /// @notice Set writelistMintNextId
     /// @dev Should not be used, but failsafe in case the admin accidentally mints a token id in the writelist range too early
-    function setWritelistMintNextId(uint _writelistMintNextId) external {
+    function setWritelistMintNextId(uint256 _writelistMintNextId) external {
         if (msg.sender != mintingOwner) {
             revert AccessControl();
         }
@@ -456,7 +526,7 @@ contract BoredAndDangerous is ERC721, ERC2981 {
     }
 
     /// @notice Set writelistPrice
-    function setWritelistPrice(uint _price) external {
+    function setWritelistPrice(uint256 _price) external {
         if (msg.sender != mintingOwner) {
             revert AccessControl();
         }
@@ -465,16 +535,23 @@ contract BoredAndDangerous is ERC721, ERC2981 {
 
     /// @notice Claim funds
     function claimFunds(address payable recipient) external {
-        if (!(msg.sender == mintingOwner || msg.sender == metadataOwner || msg.sender == royaltyOwner)) {
+        if (
+            !(msg.sender == mintingOwner ||
+                msg.sender == metadataOwner ||
+                msg.sender == royaltyOwner)
+        ) {
             revert AccessControl();
         }
 
         // Wait for the grace period after scheduled end to allow claiming of dutch auction refunds
-        if (!(dutchEnd.price > 0 && block.timestamp >= dutchEnd.time + DUTCH_AUCTION_GRACE_PERIOD)) {
+        if (
+            !(dutchEnd.price > 0 &&
+                block.timestamp >= dutchEnd.time + DUTCH_AUCTION_GRACE_PERIOD)
+        ) {
             revert DutchAuctionGracePeriod();
         }
 
-        (bool sent,) = recipient.call{value: address(this).balance}("");
+        (bool sent, ) = recipient.call{value: address(this).balance}("");
         if (!sent) {
             revert FailedToSendEther(address(this), recipient);
         }
@@ -520,7 +597,13 @@ contract BoredAndDangerous is ERC721, ERC2981 {
     // ROYALTY FUNCTIONALITY
 
     /// @dev See {IERC165-supportsInterface}.
-    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC721, ERC2981) returns (bool) {
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        virtual
+        override(ERC721, ERC2981)
+        returns (bool)
+    {
         return super.supportsInterface(interfaceId);
     }
 
@@ -541,7 +624,11 @@ contract BoredAndDangerous is ERC721, ERC2981 {
     }
 
     /// @dev See {ERC2981-_setTokenRoyalty}.
-    function setTokenRoyalty(uint256 tokenId, address receiver, uint96 feeNumerator) external {
+    function setTokenRoyalty(
+        uint256 tokenId,
+        address receiver,
+        uint96 feeNumerator
+    ) external {
         if (msg.sender != royaltyOwner) {
             revert AccessControl();
         }
@@ -559,8 +646,14 @@ contract BoredAndDangerous is ERC721, ERC2981 {
     // METADATA FUNCTIONALITY
 
     /// @notice Returns the metadata URI for a given token
-    function tokenURI(uint256 tokenId) public view override returns (string memory) {
-        return string(abi.encodePacked(baseTokenURI, Strings.toString(tokenId)));
+    function tokenURI(uint256 tokenId)
+        public
+        view
+        override
+        returns (string memory)
+    {
+        return
+            string(abi.encodePacked(baseTokenURI, Strings.toString(tokenId)));
     }
 
     // INTERNAL FUNCTIONS
@@ -573,4 +666,3 @@ contract BoredAndDangerous is ERC721, ERC2981 {
         }
     }
 }
-
