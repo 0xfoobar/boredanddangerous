@@ -2,4 +2,3 @@ cache/
 out/
 .DS_Store
 Makefile
-lib/
