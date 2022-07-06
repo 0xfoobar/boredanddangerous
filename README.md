@@ -17,6 +17,8 @@ forge test --fork-url=https://eth-mainnet.alchemyapi.io/v2/${ALCHEMY_API_KEY} --
 
 To view gas usage, add the `--gas-report` flag to either of the above commands.
 
+Please run `forge snapshot` and commit the diff to see gas increase/decrease for tests. This does not show the exact gas usage of each function call, but it shows the overall gas usage per test (these should increase/decrease relative to optimizations in functions).
+
 
 ## Gas Report
 <pre>
