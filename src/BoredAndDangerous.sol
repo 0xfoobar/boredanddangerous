@@ -497,7 +497,13 @@ contract BoredAndDangerous is ERC721, ERC2981 {
         ) {
             revert DutchAuctionBadParamsAdmin();
         }
-        params = _params;
+        params = DutchAuctionParams({
+            startPrice: _params.startPrice,
+            endPrice: _params.endPrice,
+            priceIncrement: _params.priceIncrement,
+            startTime: _params.startTime,
+            timeIncrement: _params.timeIncrement
+        });
     }
 
     /// @notice Set writelistMintNextId
