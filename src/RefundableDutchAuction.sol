@@ -278,3 +278,4 @@ contract RefundableDutchAuction is ERC721 {
         return string(abi.encodePacked(baseTokenURI, Strings.toString(tokenId)));
     }
 }
+
