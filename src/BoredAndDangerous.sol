@@ -62,12 +62,12 @@ contract BoredAndDangerous is ERC721, ERC2981 {
     bool public writelistMintWritersRoomOpen;
 
     /// @notice Construct this from (address, amount) tuple elements
-    bytes32 public giveawayMerkleRoot = "";
+    bytes32 public giveawayMerkleRoot;
     /// @notice Caches writelist allocations once they've been used
     mapping(address => Writelist) public giveawayWritelist;
 
     /// @notice Construct this from (address, tokenId) tuple elements
-    bytes32 public apeMerkleRoot = "";
+    bytes32 public apeMerkleRoot;
     /// @notice Maps (address, tokenId) hash to bool, true if token has minted
     mapping(bytes32 => bool) public apeWritelistUsed;
 
@@ -135,7 +135,7 @@ contract BoredAndDangerous is ERC721, ERC2981 {
     /// @notice Raised when the user attempts to mint zero items
     error MintZero();
 
-    constructor(uint _DUTCH_AUCTION_START_ID, uint _DUTCH_AUCTION_END_ID) ERC721("BoredAndDangerous", "BOOK") {
+    constructor(uint _DUTCH_AUCTION_START_ID, uint _DUTCH_AUCTION_END_ID) ERC721("Bored & Dangerous", "BOOK") {
         DUTCH_AUCTION_START_ID = _DUTCH_AUCTION_START_ID;
         DUTCH_AUCTION_END_ID = _DUTCH_AUCTION_END_ID;
         dutchAuctionNextId = _DUTCH_AUCTION_START_ID;
@@ -155,7 +155,9 @@ contract BoredAndDangerous is ERC721, ERC2981 {
             revert DutchAuctionNotOverAdmin();
         }
 
-        ++totalSupply;
+        unchecked {
+            ++totalSupply;
+        }
         _mint(recipient, tokenId);
     }
 
@@ -169,12 +171,14 @@ contract BoredAndDangerous is ERC721, ERC2981 {
             revert MismatchedArrays();
         }
 
-        totalSupply += tokenIds.length;
-        for (uint i = 0; i < tokenIds.length; ++i) {
-            if (DUTCH_AUCTION_START_ID <= tokenIds[i] && tokenIds[i] <= DUTCH_AUCTION_END_ID) {
-                revert DutchAuctionNotOverAdmin();
+        unchecked {
+            totalSupply += tokenIds.length;
+            for (uint i = 0; i < tokenIds.length; ++i) {
+                if (DUTCH_AUCTION_START_ID <= tokenIds[i] && tokenIds[i] <= DUTCH_AUCTION_END_ID) {
+                    revert DutchAuctionNotOverAdmin();
+                }
+                _mint(recipients[i], tokenIds[i]);
             }
-            _mint(recipients[i], tokenIds[i]);
         }
     }
     
@@ -319,7 +323,7 @@ contract BoredAndDangerous is ERC721, ERC2981 {
     }
 
     /// @notice Mint for a licensed bored ape or mutant ape
-    function writelistMintApes(address tokenContract, uint tokenId, bytes32 leaf, bytes32[] memory proof) external payable {
+    function writelistMintApes(address tokenContract, uint tokenId, bytes32 leaf, bytes32[] calldata proof) external payable {
         // Check payment
         if (msg.value != writelistPrice) {
             revert FailedToSendEther(msg.sender, address(this));
