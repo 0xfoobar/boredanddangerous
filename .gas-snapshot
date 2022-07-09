@@ -1,12 +1,6 @@
-<<<<<<< HEAD
 BoredAndDangerousTest:testDutchAuctionMint() (gas: 119222)
 BoredAndDangerousTest:testDutchAuctionRefund() (gas: 196879738)
 BoredAndDangerousTest:testOwnerMint() (gas: 77852)
-=======
-BoredAndDangerousTest:testDutchAuctionMint() (gas: 119021)
-BoredAndDangerousTest:testDutchAuctionRefund() (gas: 196403971)
-BoredAndDangerousTest:testOwnerMint() (gas: 77918)
->>>>>>> 0b9daa54bbdbb4ec58473782c79567ba677b1a4c
 BoredAndDangerousTest:testWritelistApes() (gas: 276)
 BoredAndDangerousTest:testWritelistMintGiveawayBatch() (gas: 15753000)
 BoredAndDangerousTest:testWritelistMintGiveawayMass() (gas: 15528566)
