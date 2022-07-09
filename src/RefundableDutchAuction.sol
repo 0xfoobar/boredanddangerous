@@ -92,14 +92,17 @@ contract RefundableDutchAuction is ERC721 {
     /// @notice The current dutch auction price
     /// @dev Reverts if dutch auction has not started yet
     /// @dev Returns the end price even if the dutch auction has sold out
-    function dutchAuctionPrice() public view returns (uint) {
+    function dutchAuctionPrice() public view returns (uint price) {
         DutchAuctionParams memory _params = params;
+        // Enforce timing
+        if (block.timestamp < _params.startTime || _params.startPrice == 0) {
+            revert MintNotOpen();
+        }
         uint numIncrements = (block.timestamp - _params.startTime) / _params.timeIncrement;
-        uint price = _params.startPrice - numIncrements * _params.priceIncrement;
+        price = _params.startPrice - numIncrements * _params.priceIncrement;
         if (price < _params.endPrice) {
             price = _params.endPrice;
         }
-        return price;
     }
 
     /// @notice Dutch auction with refunds
@@ -122,19 +125,8 @@ contract RefundableDutchAuction is ERC721 {
             revert DutchAuctionOver();
         }
 
-        DutchAuctionParams memory _params = params;
-
-        // Enforce timing
-        if (block.timestamp < _params.startTime || _params.startPrice == 0) {
-            revert MintNotOpen();
-        }
-        
         // Calculate dutch auction price
-        uint numIncrements = (block.timestamp - _params.startTime) / _params.timeIncrement;
-        uint price = _params.startPrice - numIncrements * _params.priceIncrement;
-        if (price < _params.endPrice) {
-            price = _params.endPrice;
-        }
+        uint price = dutchAuctionPrice();
 
         // Check mint price
         if (msg.value != amount * price) {
