@@ -119,7 +119,7 @@ contract BoredAndDangerous is ERC721, ERC2981 {
     /// @notice Raised when the user attempts to mint after the dutch auction finishes
     error DutchAuctionOver();
     /// @notice Raised when the admin attempts to withdraw funds before the dutch auction grace period has ended
-    error DutchAuctionGracePeriod();
+    error DutchAuctionGracePeriod(uint endPrice, uint endTime);
     /// @notice Raised when a user attempts to claim their dutch auction refund before the dutch auction ends
     error DutchAuctionNotOver();
     /// @notice Raised when the admin attempts to mint within the dutch auction range while the auction is still ongoing
@@ -477,7 +477,7 @@ contract BoredAndDangerous is ERC721, ERC2981 {
 
         // Wait for the grace period after scheduled end to allow claiming of dutch auction refunds
         if (!(dutchEnd.price > 0 && block.timestamp >= dutchEnd.time + DUTCH_AUCTION_GRACE_PERIOD)) {
-            revert DutchAuctionGracePeriod();
+            revert DutchAuctionGracePeriod(dutchEnd.price, dutchEnd.time);
         }
 
         (bool sent,) = recipient.call{value: address(this).balance}("");

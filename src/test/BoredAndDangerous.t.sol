@@ -23,10 +23,10 @@ contract BoredAndDangerousTest is Merkle, Test {
     BoredAndDangerousBatchHelper helper;
     address user = 0x000000000000000000000000000000000000dEaD;
     uint64 startPrice = 0.8 ether;
-    uint64 endPrice = 0.4 ether;
+    uint64 endPrice = 0.2 ether;
     uint64 priceIncrement = 0.05 ether;
     uint32 startTime = uint32(block.timestamp);
-    uint32 timeIncrement = 30 minutes;
+    uint32 timeIncrement = 15 minutes;
 
     address newAddress = 0x1000000000000000000000000000000000000000;
 
@@ -84,7 +84,7 @@ contract BoredAndDangerousTest is Merkle, Test {
             uint price = book.dutchAuctionPrice();
             book.dutchAuctionMint{value: price}(1);
             vm.stopPrank();
-            vm.warp(block.timestamp + 5); // 11k seconds, or ~3 hours total
+            vm.warp(block.timestamp + 2); // 3k seconds, or ~1 hours total
         }
 
         assertGt(startPrice, book.dutchAuctionPrice());
@@ -107,7 +107,8 @@ contract BoredAndDangerousTest is Merkle, Test {
         vm.stopPrank();
 
         // Fail to withdraw funds until auction period has ended
-        vm.expectRevert(BoredAndDangerous.DutchAuctionGracePeriod.selector);
+        (uint128 dutchEndPrice, uint128 dutchEndTime) = book.dutchEnd();
+        vm.expectRevert(abi.encodeWithSelector(BoredAndDangerous.DutchAuctionGracePeriod.selector, dutchEndPrice, dutchEndTime));
         book.claimFunds(payable(address(this)));
 
         // Let the time period pass
@@ -224,5 +225,54 @@ contract BoredAndDangerousTest is Merkle, Test {
             generateNewAddress();
         }
         helper.batch{value: totalMsgValue}(calls, msgValues, true);
+    }
+
+    function testEverything() public {
+        // This requires a fork of mainnet
+        if (block.timestamp <= 1000) {
+            return;
+        }    
+
+        // First the dutch auction will happen
+        // Simulate selling out at a price somewhere in the middle
+        vm.warp(startTime);
+
+        // Then mint out of the dutch auction over 
+        uint totalToMint = DUTCH_AUCTION_END_ID - DUTCH_AUCTION_START_ID + 1;
+        for (uint i = 0; i < totalToMint; ++i) {
+            generateNewAddress();
+            vm.deal(newAddress, 1000 ether);
+            vm.startPrank(newAddress, newAddress);
+            uint price = book.dutchAuctionPrice();
+            book.dutchAuctionMint{value: price}(1);
+            vm.stopPrank();
+            vm.warp(block.timestamp + 2); // 3k seconds, or ~1 hours total
+        }
+
+        // Issue refunds
+
+        // Claim team funds
+        vm.warp(block.timestamp + book.DUTCH_AUCTION_GRACE_PERIOD());
+        // book.claimFunds(payable(address(this)));
+
+        // Open writelist mint an hour or so after dutch auction concludes
+        book.setWritelistMintWritersRoomOpen(true);
+        book.setApeMerkleRoot(bytes32(uint256(0x1)));
+        book.setGiveawayMerkleRoot(bytes32(uint256(0x1)));
+
+        // Close paid writelist mints two days later and open free claims
+        vm.warp(block.timestamp + 2 days);
+        book.setWritelistMintWritersRoomOpen(false);
+        book.setApeMerkleRoot(bytes32(uint256(0x0)));
+        book.setGiveawayMerkleRoot(bytes32(uint256(0x0)));
+
+        book.setWritelistMintWritersRoomFreeOpen(true);
+
+        // Close free claims a week later, owner mint one, claim funds, burn mintingOwner
+        vm.warp(block.timestamp + 7 days);
+        book.setWritelistMintWritersRoomFreeOpen(false);
+        book.ownerMint(address(this), 7);
+        book.claimFunds(payable(address(this)));
+        book.setMintingOwner(address(0x0));
     }
 }
