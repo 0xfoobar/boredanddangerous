@@ -216,7 +216,7 @@ contract BoredAndDangerous is ERC721, ERC2981 {
             revert ExceededUserMintCap();
         }
 
-	uint256 _dutchAuctionNextId = dutchAuctionNextId;
+	    uint256 _dutchAuctionNextId = dutchAuctionNextId;
         // Enforce global mint cap
         if (_dutchAuctionNextId + amount > DUTCH_AUCTION_END_ID + 1) {
             revert DutchAuctionOver();
@@ -256,7 +256,7 @@ contract BoredAndDangerous is ERC721, ERC2981 {
                     time: uint128(block.timestamp)
                 });
             }
-	    dutchAuctionNextId = _dutchAuctionNextId;
+	        dutchAuctionNextId = _dutchAuctionNextId;
         }
     }
 
