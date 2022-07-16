@@ -43,14 +43,10 @@ contract AzurRoot is ERC721, ERC2981 {
 
     /// @notice Raised when an unauthorized user calls a gated function
     error AccessControl();
-    /// @notice Raised when a non-EOA account calls a gated function
-    error OnlyEOA(address msgSender);
     /// @notice Raised when the mint has not reached the required timestamp
     error MintNotOpen();
     /// @notice Raised when two calldata arrays do not have the same length
     error MismatchedArrays();
-    /// @notice Raised when the user attempts to writelist mint on behalf of a token they do not own
-    error DoesNotOwnToken(uint tokenId);
     /// @notice Raised when `sender` does not pass the proper ether amount to `recipient`
     error FailedToSendEther(address sender, address recipient);
 
@@ -60,7 +56,11 @@ contract AzurRoot is ERC721, ERC2981 {
         royaltyOwner = msg.sender;
     }
 
-    function _mint(address to, uint256 id) internal override {
+    function rootAge(uint id) external view returns (uint) {
+        return block.timestamp - mintTimes[id];
+    }
+
+    function _mint(address to, uint id) internal override {
         super._mint(to, id);
         mintTimes[id] = block.timestamp;
     }
@@ -178,7 +178,7 @@ contract AzurRoot is ERC721, ERC2981 {
     // ROYALTY FUNCTIONALITY
 
     /// @dev See {IERC165-supportsInterface}.
-    function supportsInterface(bytes4 interfaceId) public view override(ERC721, ERC2981) returns (bool) {
+    function supportsInterface(bytes4 interfaceId) public pure override(ERC721, ERC2981) returns (bool) {
         return
             interfaceId == 0x2a55205a || // ERC165 Interface ID for ERC2981
             interfaceId == 0x01ffc9a7 || // ERC165 Interface ID for ERC165
