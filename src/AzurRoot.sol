@@ -14,7 +14,7 @@ interface IERC721 {
 
 
 contract AzurRoot is ERC721, ERC2981 {
-    /// @notice The original writer's room contract
+    /// @notice The bored and dangerous contract
     address public constant BOOK = 0xBA627f3d081cc97ac0eDc40591eda7053AC63532;
     /// @notice The price for burning a book into an azur root
     uint public constant BURN_PRICE = 0.08 ether;
