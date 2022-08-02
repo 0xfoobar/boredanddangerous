@@ -2,6 +2,8 @@
 
 pragma solidity ^0.8.15;
 
+import {MultiOwnable} from "./MultiOwnable.sol";
+
 import {ERC721} from "solmate/tokens/ERC721.sol";
 import {ERC2981} from "openzeppelin-contracts/contracts/token/common/ERC2981.sol";
 import {Strings} from "openzeppelin-contracts/contracts/utils/Strings.sol";
@@ -13,18 +15,11 @@ interface IERC721 {
 }
 
 
-contract AzurRoot is ERC721, ERC2981 {
+contract AzurRoot is ERC721, ERC2981, MultiOwnable {
     /// @notice The bored and dangerous contract
     address public constant BOOK = 0xBA627f3d081cc97ac0eDc40591eda7053AC63532;
     /// @notice The price for burning a book into an azur root
     uint public constant BURN_PRICE = 0.08 ether;
-
-    /// @notice The address which can admin mint for free, set merkle roots, and set auction params
-    address public mintingOwner;
-    /// @notice The address which can update the metadata uri
-    address public metadataOwner;
-    /// @notice The address which will be returned for the ERC721 owner() standard for setting royalties
-    address public royaltyOwner;
 
     /// @notice Total number of tokens which have minted
     uint public totalSupply = 0;
@@ -41,8 +36,6 @@ contract AzurRoot is ERC721, ERC2981 {
     /// @notice Emitted when a token is minted
     event Mint(address indexed owner, uint indexed tokenId);
 
-    /// @notice Raised when an unauthorized user calls a gated function
-    error AccessControl();
     /// @notice Raised when the mint has not reached the required timestamp
     error MintNotOpen();
     /// @notice Raised when two calldata arrays do not have the same length
@@ -50,11 +43,7 @@ contract AzurRoot is ERC721, ERC2981 {
     /// @notice Raised when `sender` does not pass the proper ether amount to `recipient`
     error FailedToSendEther(address sender, address recipient);
 
-    constructor() ERC721("Azur Root", "ROOT") {
-        mintingOwner = msg.sender;
-        metadataOwner = msg.sender;
-        royaltyOwner = msg.sender;
-    }
+    constructor() ERC721("Azur Root", "ROOT") {}
 
     function rootAge(uint id) external view returns (uint) {
         return block.timestamp - mintTimes[id];
@@ -136,43 +125,6 @@ contract AzurRoot is ERC721, ERC2981 {
         if (!sent) {
             revert FailedToSendEther(address(this), recipient);
         }
-    }
-
-    ////////////////////////////////////
-    // ACCESS CONTROL ADDRESS UPDATES //
-    ////////////////////////////////////
-
-    /// @notice Update the mintingOwner
-    /// @dev Can also be used to revoke this power by setting to 0x0
-    function setMintingOwner(address _mintingOwner) external {
-        if (msg.sender != mintingOwner) {
-            revert AccessControl();
-        }
-        mintingOwner = _mintingOwner;
-    }
-
-    /// @notice Update the metadataOwner
-    /// @dev Can also be used to revoke this power by setting to 0x0
-    /// @dev Should only be revoked after setting an IPFS url so others can pin
-    function setMetadataOwner(address _metadataOwner) external {
-        if (msg.sender != metadataOwner) {
-            revert AccessControl();
-        }
-        metadataOwner = _metadataOwner;
-    }
-
-    /// @notice Update the royaltyOwner
-    /// @dev Can also be used to revoke this power by setting to 0x0
-    function setRoyaltyOwner(address _royaltyOwner) external {
-        if (msg.sender != royaltyOwner) {
-            revert AccessControl();
-        }
-        royaltyOwner = _royaltyOwner;
-    }
-
-    /// @notice The address which can set royalties
-    function owner() external view returns (address) {
-        return royaltyOwner;
     }
 
     // ROYALTY FUNCTIONALITY

@@ -2,23 +2,16 @@
 pragma solidity ^0.8.15;
 
 import "forge-std/Script.sol";
-import "../src/BoredAndDangerous.sol";
+import "../src/WeAreBookPeople.sol";
 
-contract BoredAndDangerousScript is Script {
-    uint64 startPrice = 0.8 ether;
-    uint64 endPrice = 0.2 ether;
-    uint64 priceIncrement = 0.05 ether;
-    uint32 startTime = 1657548000;
-    uint32 timeIncrement = 15 minutes;
-
-    // uint ownerMintId = 3962;
-    uint ownerMintId = 3963;
+contract WeAreBookPeopleScript is Script {
 
     function run() external {
 
-        BoredAndDangerous book = BoredAndDangerous(0xBA627f3d081cc97ac0eDc40591eda7053AC63532);
-        
         vm.startBroadcast();
+
+        WeAreBookPeople wabp = new WeAreBookPeople();
+        
 
         // book.setDutchAuctionStruct(BoredAndDangerous.DutchAuctionParams({
         //     startPrice: startPrice,
