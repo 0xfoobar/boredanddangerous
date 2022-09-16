@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.15;
+pragma solidity ^0.8.17;
 
 import {MultiOwnable} from "./MultiOwnable.sol";
 
@@ -30,8 +30,8 @@ contract AzurRoot is ERC721, ERC2981, MultiOwnable {
     /// @notice Whether the burning is open
     bool public burnOpen;
 
-    /// @notice The time an azur root token id was minted
-    mapping(uint => uint) mintTimes;
+    /// @notice The timestamp the azur roots began aging
+    uint public agingStart;
 
     /// @notice Emitted when a token is minted
     event Mint(address indexed owner, uint indexed tokenId);
@@ -42,16 +42,16 @@ contract AzurRoot is ERC721, ERC2981, MultiOwnable {
     error MismatchedArrays();
     /// @notice Raised when `sender` does not pass the proper ether amount to `recipient`
     error FailedToSendEther(address sender, address recipient);
+    /// @notice Raised when the rootAge is queried but aging has not begun
+    error AgingNotStarted();
 
     constructor() ERC721("Azur Root", "ROOT") {}
 
-    function rootAge(uint id) external view returns (uint) {
-        return block.timestamp - mintTimes[id];
-    }
-
-    function _mint(address to, uint id) internal override {
-        super._mint(to, id);
-        mintTimes[id] = block.timestamp;
+    function rootAge() external view returns (uint) {
+        if (agingStart == 0) {
+            revert AgingNotStarted();
+        }
+        return block.timestamp - agingStart;
     }
 
     /// @notice Admin mint a batch of tokens
@@ -113,6 +113,14 @@ contract AzurRoot is ERC721, ERC2981, MultiOwnable {
             revert AccessControl();
         }
         burnOpen = _burnOpen;
+    }
+
+    /// @notice Set aging start
+    function setAgingStart() external {
+        if (msg.sender != mintingOwner) {
+            revert AccessControl();
+        }
+        agingStart = block.timestamp;
     }
 
     /// @notice Claim funds

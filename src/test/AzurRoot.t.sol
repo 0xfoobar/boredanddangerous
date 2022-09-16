@@ -60,6 +60,18 @@ contract AzurRootTest is Test {
 
         vm.startPrank(user);
         root.burnBooks{value: tokenIds.length * root.BURN_PRICE()}(tokenIds);
+        vm.stopPrank();
+
+        // Fail to query rootAge before aging is set
+        vm.expectRevert(abi.encodeWithSelector(AzurRoot.AgingNotStarted.selector));
+        root.rootAge();
+
+        // Set root aging
+        root.setAgingStart();
+        assertEq(0, root.rootAge());
+        
+        vm.warp(block.timestamp + 1 days);
+        assertEq(1 days, root.rootAge());
     }
 
     function testClaimFunds() public {
