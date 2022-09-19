@@ -68,6 +68,16 @@ contract AzurRoot is ERC721, ERC2981, MultiOwnable {
         }
     }
 
+    /// @notice Burn a token
+    function burn(uint256 id) external {
+        address from = _ownerOf[id];
+        require(
+            msg.sender == from || isApprovedForAll[from][msg.sender] || msg.sender == getApproved[id],
+            "NOT_AUTHORIZED"
+        );
+        _burn(id);
+    }
+
     //////////////////
     // BOOK BURNING //
     //////////////////

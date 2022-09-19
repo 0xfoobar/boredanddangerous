@@ -72,6 +72,14 @@ contract AzurRootTest is Test {
         
         vm.warp(block.timestamp + 1 days);
         assertEq(1 days, root.rootAge());
+
+        // Burn the azur root, like users will do for avatars
+        vm.expectRevert('NOT_AUTHORIZED');
+        root.burn(0);
+        vm.startPrank(user);
+        root.setApprovalForAll(address(this), true);
+        vm.stopPrank();
+        root.burn(0);
     }
 
     function testClaimFunds() public {
