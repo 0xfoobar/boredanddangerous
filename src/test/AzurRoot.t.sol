@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.15;
+pragma solidity ^0.8.17;
 
 import "ds-test/test.sol";
 import "forge-std/console2.sol";
@@ -15,7 +15,7 @@ interface Book {
 }
 
 contract AzurRootTest is Test {
-    AzurRoot root = new AzurRoot();
+    AzurRoot root = new AzurRoot(0xBA627f3d081cc97ac0eDc40591eda7053AC63532);
     Book book = Book(root.BOOK());
     address user = 0xFC48426Da0338735945BaDEf273736cCFF53A358;
 

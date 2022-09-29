@@ -16,7 +16,7 @@ interface IERC721 {
 
 contract AzurRoot is ERC721, ERC2981, MultiOwnable {
     /// @notice The bored and dangerous contract
-    address public constant BOOK = 0xBA627f3d081cc97ac0eDc40591eda7053AC63532;
+    address public immutable BOOK;
     /// @notice The price for burning a book into an azur root
     uint public constant BURN_PRICE = 0.08 ether;
 
@@ -44,7 +44,9 @@ contract AzurRoot is ERC721, ERC2981, MultiOwnable {
     /// @notice Raised when the rootAge is queried but aging has not begun
     error AgingNotStarted();
 
-    constructor() ERC721("Azur Root", "ROOT") {}
+    constructor(address _book) ERC721("Azur Root", "ROOT") {
+        BOOK = _book;
+    }
 
     function rootAge() external view returns (uint) {
         if (agingStart == 0) {
