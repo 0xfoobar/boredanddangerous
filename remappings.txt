@@ -1,0 +1,10 @@
+@rari-capital/solmate/=lib/solmate/
+contracts/=contracts/
+ds-test/=lib/ds-test/src/
+erc4626-tests/=lib/operator-filter-registry/lib/openzeppelin-contracts/lib/erc4626-tests/
+forge-std/=lib/forge-std/src/
+murky/=lib/murky/src/
+openzeppelin-contracts-upgradeable/=lib/operator-filter-registry/lib/openzeppelin-contracts-upgradeable/
+openzeppelin-contracts/=lib/openzeppelin-contracts/
+operator-filter-registry/=lib/operator-filter-registry/src/
+solmate/=lib/solmate/src/

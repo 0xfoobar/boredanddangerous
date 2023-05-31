@@ -7,6 +7,7 @@ import {MultiOwnable} from "./MultiOwnable.sol";
 import {ERC721} from "solmate/tokens/ERC721.sol";
 import {ERC2981} from "openzeppelin-contracts/contracts/token/common/ERC2981.sol";
 import {Strings} from "openzeppelin-contracts/contracts/utils/Strings.sol";
+import {DefaultOperatorFilterer} from "operator-filter-registry/DefaultOperatorFilterer.sol";
 
 interface IERC721 {
     function ownerOf(uint256 tokenId) external view returns (address);
@@ -17,7 +18,7 @@ interface IAzurian {
     function burnRootAndMint(uint256[] calldata rootIds) external payable;
 }
 
-contract AzurRoot is ERC721, ERC2981, MultiOwnable {
+contract AzurRoot is DefaultOperatorFilterer, ERC721, ERC2981, MultiOwnable {
     /// @notice The bored and dangerous contract
     address public immutable BOOK;
 
@@ -180,5 +181,31 @@ contract AzurRoot is ERC721, ERC2981, MultiOwnable {
     /// @notice Returns the metadata URI for a given token
     function tokenURI(uint256 tokenId) public view override returns (string memory) {
         return string(abi.encodePacked(baseTokenURI, Strings.toString(tokenId)));
+    }
+
+    // OPERATOR FILTER
+
+    function setApprovalForAll(address operator, bool approved) public override onlyAllowedOperatorApproval(operator) {
+        super.setApprovalForAll(operator, approved);
+    }
+
+    function approve(address operator, uint256 tokenId) public override onlyAllowedOperatorApproval(operator) {
+        super.approve(operator, tokenId);
+    }
+
+    function transferFrom(address from, address to, uint256 tokenId) public override onlyAllowedOperator(from) {
+        super.transferFrom(from, to, tokenId);
+    }
+
+    function safeTransferFrom(address from, address to, uint256 tokenId) public override onlyAllowedOperator(from) {
+        super.safeTransferFrom(from, to, tokenId);
+    }
+
+    function safeTransferFrom(address from, address to, uint256 tokenId, bytes calldata data)
+        public
+        override
+        onlyAllowedOperator(from)
+    {
+        super.safeTransferFrom(from, to, tokenId, data);
     }
 }
