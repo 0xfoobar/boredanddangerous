@@ -17,8 +17,6 @@ interface IERC721 {
 contract AzurRoot is ERC721, ERC2981, MultiOwnable {
     /// @notice The bored and dangerous contract
     address public immutable BOOK;
-    /// @notice The price for burning a book into an azur root
-    uint public constant BURN_PRICE = 0.08 ether;
 
     /// @notice Total number of tokens which have minted
     uint public totalSupply = 0;
@@ -73,13 +71,9 @@ contract AzurRoot is ERC721, ERC2981, MultiOwnable {
     //////////////////
 
     /// @notice Burn a book to receive an azur root
-    function burnBooks(uint[] calldata tokenIds) external payable {
+    function burnBooks(uint[] calldata tokenIds) external {
         if (!burnOpen) {
             revert MintNotOpen();
-        }
-        // Check payment
-        if (msg.value != tokenIds.length * BURN_PRICE) {
-            revert FailedToSendEther(msg.sender, address(this));
         }
 
         // Cache the totalSupply to minimize storage reads

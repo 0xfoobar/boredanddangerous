@@ -59,7 +59,7 @@ contract AzurRootTest is Test {
         root.setBurnOpen(true);
 
         vm.startPrank(user);
-        root.burnBooks{value: tokenIds.length * root.BURN_PRICE()}(tokenIds);
+        root.burnBooks(tokenIds);
         vm.stopPrank();
         
         vm.warp(block.timestamp + 1 days);

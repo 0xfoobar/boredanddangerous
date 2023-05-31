@@ -16,7 +16,7 @@ contract BoredAndDangerousScript is Script {
 
     function run() external {
 
-        BoredAndDangerous book = BoredAndDangerous(0xBA627f3d081cc97ac0eDc40591eda7053AC63532);
+        // BoredAndDangerous book = BoredAndDangerous(0xBA627f3d081cc97ac0eDc40591eda7053AC63532);
         
         vm.startBroadcast();
 

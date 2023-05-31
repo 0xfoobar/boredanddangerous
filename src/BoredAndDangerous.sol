@@ -526,7 +526,7 @@ contract BoredAndDangerous is ERC721, ERC2981 {
     // ROYALTY FUNCTIONALITY
 
     /// @dev See {IERC165-supportsInterface}.
-    function supportsInterface(bytes4 interfaceId) public view override(ERC721, ERC2981) returns (bool) {
+    function supportsInterface(bytes4 interfaceId) public pure override(ERC721, ERC2981) returns (bool) {
         return
             interfaceId == 0x2a55205a || // ERC165 Interface ID for ERC2981
             interfaceId == 0x01ffc9a7 || // ERC165 Interface ID for ERC165
