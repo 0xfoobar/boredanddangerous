@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.20;
 
 abstract contract MultiOwnable {
     /// @notice The address which can admin mint for free, set merkle roots, and set auction params
