@@ -13,7 +13,7 @@ contract BoredAndDangerousBatchHelper {
     /// @notice Raised when two calldata arrays do not have the same length
     error MismatchedArrays();
 
-    constructor (address _JENKINS_BOOK) {
+    constructor(address _JENKINS_BOOK) {
         JENKINS_BOOK = _JENKINS_BOOK;
     }
 
@@ -21,14 +21,14 @@ contract BoredAndDangerousBatchHelper {
     /// @param calls An array of inputs for each call.
     /// @param msgValues The eth to send along for each call.
     /// @param revertOnFail If True then reverts after a failed call and stops doing further calls.
-    function batch(bytes[] calldata calls, uint[] calldata msgValues, bool revertOnFail) external payable {
+    function batch(bytes[] calldata calls, uint256[] calldata msgValues, bool revertOnFail) external payable {
         // Check array length
         if (calls.length != msgValues.length) {
             revert MismatchedArrays();
         }
 
         // Check that proper ETH value is sent
-        uint msgValueTotal = 0;
+        uint256 msgValueTotal = 0;
         for (uint256 i = 0; i < calls.length; ++i) {
             msgValueTotal += msgValues[i];
         }
@@ -58,5 +58,4 @@ contract BoredAndDangerousBatchHelper {
         }
         revert(abi.decode(_returnData, (string))); // All that remains is the revert string
     }
-    
 }

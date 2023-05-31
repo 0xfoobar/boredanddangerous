@@ -11,13 +11,13 @@ import {BoredAndDangerous} from "../BoredAndDangerous.sol";
 import {BoredAndDangerousBatchHelper} from "../BoredAndDangerousBatchHelper.sol";
 
 interface IERC721 {
-    function ownerOf(uint tokenId) external view returns (address);
+    function ownerOf(uint256 tokenId) external view returns (address);
 }
 
 contract BoredAndDangerousTest is Merkle, Test {
-    uint public constant AMOUNT = 1;
-    uint public constant DUTCH_AUCTION_START_ID = 6943;
-    uint public constant DUTCH_AUCTION_END_ID = 9309;
+    uint256 public constant AMOUNT = 1;
+    uint256 public constant DUTCH_AUCTION_START_ID = 6943;
+    uint256 public constant DUTCH_AUCTION_END_ID = 9309;
 
     BoredAndDangerous book;
     BoredAndDangerousBatchHelper helper;
@@ -36,13 +36,15 @@ contract BoredAndDangerousTest is Merkle, Test {
         vm.deal(user, 1000 ether);
         book = new BoredAndDangerous(DUTCH_AUCTION_START_ID, DUTCH_AUCTION_END_ID);
         helper = new BoredAndDangerousBatchHelper(address(book));
-        book.setDutchAuctionStruct(BoredAndDangerous.DutchAuctionParams({
-            startPrice: startPrice,
-            endPrice: endPrice,
-            priceIncrement: priceIncrement,
-            startTime: startTime,
-            timeIncrement: timeIncrement
-        }));
+        book.setDutchAuctionStruct(
+            BoredAndDangerous.DutchAuctionParams({
+                startPrice: startPrice,
+                endPrice: endPrice,
+                priceIncrement: priceIncrement,
+                startTime: startTime,
+                timeIncrement: timeIncrement
+            })
+        );
 
         vm.label(address(this), "Tester");
         vm.label(address(book), "Book");
@@ -54,7 +56,7 @@ contract BoredAndDangerousTest is Merkle, Test {
     }
 
     function testOwnerMint() public {
-        uint tokenId = 3;
+        uint256 tokenId = 3;
         book.ownerMint(address(this), tokenId);
         assertEq(book.ownerOf(tokenId), address(this));
     }
@@ -64,8 +66,8 @@ contract BoredAndDangerousTest is Merkle, Test {
         vm.startPrank(user, user);
         book.dutchAuctionMint{value: AMOUNT * startPrice}(AMOUNT);
 
-        for (uint i = 0; i < AMOUNT; ++i) {
-            assertEq(book.ownerOf(6943+i), user);
+        for (uint256 i = 0; i < AMOUNT; ++i) {
+            assertEq(book.ownerOf(6943 + i), user);
         }
     }
 
@@ -75,13 +77,13 @@ contract BoredAndDangerousTest is Merkle, Test {
         book.dutchAuctionMint{value: startPrice}(1);
         vm.stopPrank();
 
-        // Then mint out of the dutch auction over 
-        uint totalToMint = DUTCH_AUCTION_END_ID - DUTCH_AUCTION_START_ID + 1;
-        for (uint i = 0; i < totalToMint - 1; ++i) {
+        // Then mint out of the dutch auction over
+        uint256 totalToMint = DUTCH_AUCTION_END_ID - DUTCH_AUCTION_START_ID + 1;
+        for (uint256 i = 0; i < totalToMint - 1; ++i) {
             generateNewAddress();
             vm.deal(newAddress, 1000 ether);
             vm.startPrank(newAddress, newAddress);
-            uint price = book.dutchAuctionPrice();
+            uint256 price = book.dutchAuctionPrice();
             book.dutchAuctionMint{value: price}(1);
             vm.stopPrank();
             vm.warp(block.timestamp + 2); // 3k seconds, or ~1 hours total
@@ -91,31 +93,33 @@ contract BoredAndDangerousTest is Merkle, Test {
         assertLt(endPrice, book.dutchAuctionPrice());
 
         vm.startPrank(user);
-        uint startBalance = user.balance;
+        uint256 startBalance = user.balance;
         address[] memory users = new address[](1);
         users[0] = user;
         book.claimDutchAuctionRefund(users);
-        uint endBalance = user.balance;
+        uint256 endBalance = user.balance;
 
         (uint128 actualEndPrice,) = book.dutchEnd();
         assertEq(endBalance - startBalance, startPrice - actualEndPrice, "wrong refund");
 
         // Claiming a second time should be a no-op
         book.claimDutchAuctionRefund(users);
-        uint doubleEndBalance = user.balance;
+        uint256 doubleEndBalance = user.balance;
         assertEq(doubleEndBalance, endBalance, "user got a second refund");
         vm.stopPrank();
 
         // Fail to withdraw funds until auction period has ended
         (uint128 dutchEndPrice, uint128 dutchEndTime) = book.dutchEnd();
-        vm.expectRevert(abi.encodeWithSelector(BoredAndDangerous.DutchAuctionGracePeriod.selector, dutchEndPrice, dutchEndTime));
+        vm.expectRevert(
+            abi.encodeWithSelector(BoredAndDangerous.DutchAuctionGracePeriod.selector, dutchEndPrice, dutchEndTime)
+        );
         book.claimFunds(payable(address(this)));
 
         // Let the time period pass
         vm.warp(block.timestamp + book.DUTCH_AUCTION_GRACE_PERIOD());
 
         // Successfully claim funds
-        uint prevBalance = address(this).balance;
+        uint256 prevBalance = address(this).balance;
         book.claimFunds(payable(address(this)));
         assertGt(address(this).balance, prevBalance, "Did not send ether");
     }
@@ -126,9 +130,9 @@ contract BoredAndDangerousTest is Merkle, Test {
             return;
         }
 
-        uint tokenId = 1;
+        uint256 tokenId = 1;
 
-        uint[] memory tokenIds = new uint[](1);
+        uint256[] memory tokenIds = new uint[](1);
         tokenIds[0] = tokenId;
         // Should revert before mint is opened
         vm.expectRevert(BoredAndDangerous.MintNotOpen.selector);
@@ -146,7 +150,7 @@ contract BoredAndDangerousTest is Merkle, Test {
 
         address bayc = 0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D;
         address mayc = 0x60E4d786628Fea6478F785A6d7e704777c86a7c6;
-        uint numAccounts = 100;
+        uint256 numAccounts = 100;
 
         Merkle m = new Merkle();
         // Generate Data
@@ -164,13 +168,13 @@ contract BoredAndDangerousTest is Merkle, Test {
     }
 
     function testWritelistMintGiveawayMass() public {
-        uint numAccounts = 100;
+        uint256 numAccounts = 100;
 
         // Initialize
         Merkle m = new Merkle();
         // Generate Data
         bytes32[] memory data = new bytes32[](numAccounts);
-        for (uint i = 0; i < numAccounts; ++i) {
+        for (uint256 i = 0; i < numAccounts; ++i) {
             vm.deal(newAddress, 1000 ether);
             data[i] = keccak256(abi.encodePacked(newAddress, uint8(1)));
             generateNewAddress();
@@ -181,7 +185,7 @@ contract BoredAndDangerousTest is Merkle, Test {
         book.setGiveawayMerkleRoot(root);
         book.setWritelistPrice(1 ether);
         newAddress = 0x1000000000000000000000000000000000000000;
-        for (uint i = 0; i < numAccounts; ++i) {
+        for (uint256 i = 0; i < numAccounts; ++i) {
             vm.startPrank(newAddress);
             bytes32[] memory proof = m.getProof(data, i);
             book.writelistMintGiveaway{value: book.writelistPrice()}(newAddress, 1, 1, data[i], proof);
@@ -191,14 +195,14 @@ contract BoredAndDangerousTest is Merkle, Test {
     }
 
     function testWritelistMintGiveawayBatch() public {
-        uint numAccounts = 100;
-        uint numAccountsToBatch = 100;
+        uint256 numAccounts = 100;
+        uint256 numAccountsToBatch = 100;
 
         // Initialize
         Merkle m = new Merkle();
         // Generate Data
         bytes32[] memory data = new bytes32[](numAccounts);
-        for (uint i = 0; i < numAccounts; ++i) {
+        for (uint256 i = 0; i < numAccounts; ++i) {
             vm.deal(newAddress, 1000 ether);
             data[i] = keccak256(abi.encodePacked(newAddress, uint8(1)));
             generateNewAddress();
@@ -211,14 +215,13 @@ contract BoredAndDangerousTest is Merkle, Test {
         newAddress = 0x1000000000000000000000000000000000000000;
 
         bytes[] memory calls = new bytes[](numAccountsToBatch);
-        uint[] memory msgValues = new uint[](numAccountsToBatch);
+        uint256[] memory msgValues = new uint[](numAccountsToBatch);
 
-        uint totalMsgValue = 0;
-        for (uint i = 0; i < numAccountsToBatch; ++i) {
+        uint256 totalMsgValue = 0;
+        for (uint256 i = 0; i < numAccountsToBatch; ++i) {
             bytes32[] memory proof = m.getProof(data, i);
             calls[i] = abi.encodeWithSignature(
-                "writelistMintGiveaway(address,uint8,uint8,bytes32,bytes32[])",
-                newAddress, 1, 1, data[i], proof
+                "writelistMintGiveaway(address,uint8,uint8,bytes32,bytes32[])", newAddress, 1, 1, data[i], proof
             );
             msgValues[i] = book.writelistPrice();
             totalMsgValue += msgValues[i];
@@ -231,19 +234,19 @@ contract BoredAndDangerousTest is Merkle, Test {
         // This requires a fork of mainnet
         if (block.timestamp <= 1000) {
             return;
-        }    
+        }
 
         // First the dutch auction will happen
         // Simulate selling out at a price somewhere in the middle
         vm.warp(startTime);
 
-        // Then mint out of the dutch auction over 
-        uint totalToMint = DUTCH_AUCTION_END_ID - DUTCH_AUCTION_START_ID + 1;
-        for (uint i = 0; i < totalToMint; ++i) {
+        // Then mint out of the dutch auction over
+        uint256 totalToMint = DUTCH_AUCTION_END_ID - DUTCH_AUCTION_START_ID + 1;
+        for (uint256 i = 0; i < totalToMint; ++i) {
             generateNewAddress();
             vm.deal(newAddress, 1000 ether);
             vm.startPrank(newAddress, newAddress);
-            uint price = book.dutchAuctionPrice();
+            uint256 price = book.dutchAuctionPrice();
             book.dutchAuctionMint{value: price}(1);
             vm.stopPrank();
             vm.warp(block.timestamp + 2); // 3k seconds, or ~1 hours total

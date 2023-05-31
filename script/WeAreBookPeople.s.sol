@@ -5,13 +5,10 @@ import "forge-std/Script.sol";
 import "../src/WeAreBookPeople.sol";
 
 contract WeAreBookPeopleScript is Script {
-
     function run() external {
-
         vm.startBroadcast();
 
         WeAreBookPeople wabp = new WeAreBookPeople();
-        
 
         // book.setDutchAuctionStruct(BoredAndDangerous.DutchAuctionParams({
         //     startPrice: startPrice,

@@ -12,12 +12,11 @@ contract BoredAndDangerousScript is Script {
     uint32 timeIncrement = 15 minutes;
 
     // uint ownerMintId = 3962;
-    uint ownerMintId = 3963;
+    uint256 ownerMintId = 3963;
 
     function run() external {
-
         // BoredAndDangerous book = BoredAndDangerous(0xBA627f3d081cc97ac0eDc40591eda7053AC63532);
-        
+
         vm.startBroadcast();
 
         // book.setDutchAuctionStruct(BoredAndDangerous.DutchAuctionParams({

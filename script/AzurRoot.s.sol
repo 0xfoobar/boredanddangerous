@@ -6,7 +6,6 @@ import {BoredAndDangerous} from "../src/BoredAndDangerous.sol";
 import {AzurRoot} from "../src/AzurRoot.sol";
 
 contract AzurRootScript is Script {
-
     function run() external {
         vm.startBroadcast();
 
@@ -20,9 +19,9 @@ contract AzurRootScript is Script {
         uint256 length = 50;
         address[] memory recipients = new address[](length);
         uint256[] memory tokenIds = new uint[](length);
-        for (uint i = start; i < start+length; i++) {
-            recipients[i-start] = 0xe59136B4c9aeDb1EB59630CfeBffdd0B244e2086;
-            tokenIds[i-start] = i;
+        for (uint256 i = start; i < start + length; i++) {
+            recipients[i - start] = 0xe59136B4c9aeDb1EB59630CfeBffdd0B244e2086;
+            tokenIds[i - start] = i;
         }
         book.ownerMintBatch(recipients, tokenIds);
 

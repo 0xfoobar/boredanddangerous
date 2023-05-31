@@ -8,10 +8,13 @@ import {ERC721} from "solmate/tokens/ERC721.sol";
 import {ERC2981} from "openzeppelin-contracts/contracts/token/common/ERC2981.sol";
 import {Strings} from "openzeppelin-contracts/contracts/utils/Strings.sol";
 
-
 interface IERC721 {
-    function ownerOf(uint tokenId) external view returns (address);
-    function transferFrom(address from, address to, uint id) external;
+    function ownerOf(uint256 tokenId) external view returns (address);
+    function transferFrom(address from, address to, uint256 id) external;
+}
+
+interface IAzurian {
+    function burnRootAndMint(uint256[] calldata rootIds) external payable;
 }
 
 contract AzurRoot is ERC721, ERC2981, MultiOwnable {
@@ -19,7 +22,7 @@ contract AzurRoot is ERC721, ERC2981, MultiOwnable {
     address public immutable BOOK;
 
     /// @notice Total number of tokens which have minted
-    uint public totalSupply = 0;
+    uint256 public totalSupply = 0;
 
     /// @notice The prefix to attach to the tokenId to get the metadata uri
     string public baseTokenURI;
@@ -28,7 +31,7 @@ contract AzurRoot is ERC721, ERC2981, MultiOwnable {
     bool public burnOpen;
 
     /// @notice Emitted when a token is minted
-    event Mint(address indexed owner, uint indexed tokenId);
+    event Mint(address indexed owner, uint256 indexed tokenId);
 
     /// @notice Raised when the mint has not reached the required timestamp
     error MintNotOpen();
@@ -36,6 +39,8 @@ contract AzurRoot is ERC721, ERC2981, MultiOwnable {
     error MismatchedArrays();
     /// @notice Raised when `sender` does not pass the proper ether amount to `recipient`
     error FailedToSendEther(address sender, address recipient);
+    /// @notice Raised when `msg.sender` does not own the roots they're attempting to burn
+    error BurnAuthentication();
 
     constructor(address _book) ERC721("Azur Root", "ROOT") {
         BOOK = _book;
@@ -48,9 +53,9 @@ contract AzurRoot is ERC721, ERC2981, MultiOwnable {
         }
 
         unchecked {
-            uint _totalSupply = totalSupply;
-            for (uint i = 0; i < recipients.length; ++i) {
-                _mint(recipients[i], _totalSupply+i);
+            uint256 _totalSupply = totalSupply;
+            for (uint256 i = 0; i < recipients.length; ++i) {
+                _mint(recipients[i], _totalSupply + i);
             }
             totalSupply += recipients.length;
         }
@@ -60,8 +65,7 @@ contract AzurRoot is ERC721, ERC2981, MultiOwnable {
     function burn(uint256 id) external {
         address from = _ownerOf[id];
         require(
-            msg.sender == from || isApprovedForAll[from][msg.sender] || msg.sender == getApproved[id],
-            "NOT_AUTHORIZED"
+            msg.sender == from || isApprovedForAll[from][msg.sender] || msg.sender == getApproved[id], "NOT_AUTHORIZED"
         );
         _burn(id);
     }
@@ -71,14 +75,14 @@ contract AzurRoot is ERC721, ERC2981, MultiOwnable {
     //////////////////
 
     /// @notice Burn a book to receive an azur root
-    function burnBooks(uint[] calldata tokenIds) external {
+    function burnBooks(uint256[] calldata tokenIds) external {
         if (!burnOpen) {
             revert MintNotOpen();
         }
 
         // Cache the totalSupply to minimize storage reads
-        uint _totalSupply = totalSupply;
-        for (uint i = 0; i < tokenIds.length; ++i) {
+        uint256 _totalSupply = totalSupply;
+        for (uint256 i = 0; i < tokenIds.length; ++i) {
             // Attempt to transfer token from the msg sender, revert if not owned or approved
             IERC721(BOOK).transferFrom(msg.sender, address(this), tokenIds[i]);
             _mint(msg.sender, _totalSupply + i);
@@ -86,7 +90,16 @@ contract AzurRoot is ERC721, ERC2981, MultiOwnable {
         totalSupply += tokenIds.length;
     }
 
-
+    /// @notice Burn a root to receive an azurian
+    function burnRoots(address azurians, uint256[] calldata rootIds) external payable {
+        for (uint256 i = 0; i < rootIds.length; ++i) {
+            if (msg.sender != ownerOf(rootIds[i])) {
+                revert BurnAuthentication();
+            }
+            _burn(rootIds[i]);
+        }
+        IAzurian(azurians).burnRootAndMint{value: msg.value}(rootIds);
+    }
 
     /////////////////////////
     // ADMIN FUNCTIONALITY //
@@ -124,11 +137,10 @@ contract AzurRoot is ERC721, ERC2981, MultiOwnable {
 
     /// @dev See {IERC165-supportsInterface}.
     function supportsInterface(bytes4 interfaceId) public pure override(ERC721, ERC2981) returns (bool) {
-        return
-            interfaceId == 0x2a55205a || // ERC165 Interface ID for ERC2981
-            interfaceId == 0x01ffc9a7 || // ERC165 Interface ID for ERC165
-            interfaceId == 0x80ac58cd || // ERC165 Interface ID for ERC721
-            interfaceId == 0x5b5e139f; // ERC165 Interface ID for ERC721Metadata
+        return interfaceId == 0x2a55205a // ERC165 Interface ID for ERC2981
+            || interfaceId == 0x01ffc9a7 // ERC165 Interface ID for ERC165
+            || interfaceId == 0x80ac58cd // ERC165 Interface ID for ERC721
+            || interfaceId == 0x5b5e139f; // ERC165 Interface ID for ERC721Metadata
     }
 
     /// @dev See {ERC2981-_setDefaultRoyalty}.
@@ -170,4 +182,3 @@ contract AzurRoot is ERC721, ERC2981, MultiOwnable {
         return string(abi.encodePacked(baseTokenURI, Strings.toString(tokenId)));
     }
 }
-

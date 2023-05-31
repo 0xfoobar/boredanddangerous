@@ -51,13 +51,13 @@ contract RefundableDutchAuction is ERC721 {
     }
 
     /// @notice The grace period for refund claiming
-    uint public constant DUTCH_AUCTION_GRACE_PERIOD = 24 hours;
+    uint256 public constant DUTCH_AUCTION_GRACE_PERIOD = 24 hours;
     /// @notice The mint cap in the dutch auction
-    uint public constant DUTCH_AUCTION_MINT_CAP = 5;
+    uint256 public constant DUTCH_AUCTION_MINT_CAP = 5;
     /// @notice The first token id that dutch auction minters will receive, inclusive
-    uint public immutable DUTCH_AUCTION_START_ID;
+    uint256 public immutable DUTCH_AUCTION_START_ID;
     /// @notice The last token id that dutch auction minters will receive, inclusive
-    uint public immutable DUTCH_AUCTION_END_ID;
+    uint256 public immutable DUTCH_AUCTION_END_ID;
 
     /// @notice The address which can admin mint for free, set merkle roots, and set auction params
     address public mintingOwner;
@@ -67,7 +67,7 @@ contract RefundableDutchAuction is ERC721 {
     address public royaltyOwner;
 
     /// @notice Total number of tokens which have minted
-    uint public totalSupply = 0;
+    uint256 public totalSupply = 0;
     /// @notice The prefix to attach to the tokenId to get the metadata uri
     string public baseTokenURI;
 
@@ -78,9 +78,9 @@ contract RefundableDutchAuction is ERC721 {
     /// @notice Store the mint history for an individual address. Used to issue refunds
     mapping(address => DutchAuctionMintHistory) public mintHistory;
     /// @notice The token id which will be minted next in the dutch auction
-    uint public dutchAuctionNextId;
+    uint256 public dutchAuctionNextId;
 
-    constructor(uint _DUTCH_AUCTION_START_ID, uint _DUTCH_AUCTION_END_ID) ERC721("Token Name", "SYMBOL") {
+    constructor(uint256 _DUTCH_AUCTION_START_ID, uint256 _DUTCH_AUCTION_END_ID) ERC721("Token Name", "SYMBOL") {
         DUTCH_AUCTION_START_ID = _DUTCH_AUCTION_START_ID;
         DUTCH_AUCTION_END_ID = _DUTCH_AUCTION_END_ID;
         dutchAuctionNextId = _DUTCH_AUCTION_START_ID;
@@ -92,10 +92,10 @@ contract RefundableDutchAuction is ERC721 {
     /// @notice The current dutch auction price
     /// @dev Reverts if dutch auction has not started yet
     /// @dev Returns the end price even if the dutch auction has sold out
-    function dutchAuctionPrice() public view returns (uint) {
+    function dutchAuctionPrice() public view returns (uint256) {
         DutchAuctionParams memory _params = params;
-        uint numIncrements = (block.timestamp - _params.startTime) / _params.timeIncrement;
-        uint price = _params.startPrice - numIncrements * _params.priceIncrement;
+        uint256 numIncrements = (block.timestamp - _params.startTime) / _params.timeIncrement;
+        uint256 price = _params.startPrice - numIncrements * _params.priceIncrement;
         if (price < _params.endPrice) {
             price = _params.endPrice;
         }
@@ -104,7 +104,7 @@ contract RefundableDutchAuction is ERC721 {
 
     /// @notice Dutch auction with refunds
     /// @param amount The number of NFTs to mint, either 1 or 2
-    function dutchAuctionMint(uint amount) external payable {
+    function dutchAuctionMint(uint256 amount) external payable {
         if (amount == 0) {
             revert MintZero();
         }
@@ -116,7 +116,7 @@ contract RefundableDutchAuction is ERC721 {
             revert ExceededUserMintCap();
         }
 
-	uint256 _dutchAuctionNextId = dutchAuctionNextId;
+        uint256 _dutchAuctionNextId = dutchAuctionNextId;
         // Enforce global mint cap
         if (_dutchAuctionNextId + amount > DUTCH_AUCTION_END_ID + 1) {
             revert DutchAuctionOver();
@@ -128,10 +128,10 @@ contract RefundableDutchAuction is ERC721 {
         if (block.timestamp < _params.startTime || _params.startPrice == 0) {
             revert MintNotOpen();
         }
-        
+
         // Calculate dutch auction price
-        uint numIncrements = (block.timestamp - _params.startTime) / _params.timeIncrement;
-        uint price = _params.startPrice - numIncrements * _params.priceIncrement;
+        uint256 numIncrements = (block.timestamp - _params.startTime) / _params.timeIncrement;
+        uint256 price = _params.startPrice - numIncrements * _params.priceIncrement;
         if (price < _params.endPrice) {
             price = _params.endPrice;
         }
@@ -141,22 +141,18 @@ contract RefundableDutchAuction is ERC721 {
             revert FailedToSendEther(msg.sender, address(this));
         }
         unchecked {
-            uint128 newPrice = (userMintHistory.amount * userMintHistory.price + uint128(amount * price)) / uint128(userMintHistory.amount + amount);
-            mintHistory[msg.sender] = DutchAuctionMintHistory({
-                amount: userMintHistory.amount + uint128(amount),
-                price: newPrice
-            });
-            for (uint i = 0; i < amount; ++i) {
+            uint128 newPrice = (userMintHistory.amount * userMintHistory.price + uint128(amount * price))
+                / uint128(userMintHistory.amount + amount);
+            mintHistory[msg.sender] =
+                DutchAuctionMintHistory({amount: userMintHistory.amount + uint128(amount), price: newPrice});
+            for (uint256 i = 0; i < amount; ++i) {
                 _mint(msg.sender, _dutchAuctionNextId++);
             }
             totalSupply += amount;
             if (_dutchAuctionNextId > DUTCH_AUCTION_END_ID) {
-                dutchEnd = DutchAuctionFinalization({
-                    price: uint128(price),
-                    time: uint128(block.timestamp)
-                });
+                dutchEnd = DutchAuctionFinalization({price: uint128(price), time: uint128(block.timestamp)});
             }
-	    dutchAuctionNextId = _dutchAuctionNextId;
+            dutchAuctionNextId = _dutchAuctionNextId;
         }
     }
 
@@ -167,13 +163,13 @@ contract RefundableDutchAuction is ERC721 {
         if (dutchEnd.price == 0) {
             revert DutchAuctionNotOver();
         }
-        for (uint i = 0; i < accounts.length; ++i) {
+        for (uint256 i = 0; i < accounts.length; ++i) {
             address account = accounts[i];
             DutchAuctionMintHistory memory mint = mintHistory[account];
             // If an account has already been refunded, skip instead of reverting
             // This prevents griefing attacks when performing batch refunds
             if (mint.price > 0) {
-                uint refundAmount = mint.amount * (mint.price - dutchEnd.price);
+                uint256 refundAmount = mint.amount * (mint.price - dutchEnd.price);
                 delete mintHistory[account];
                 (bool sent,) = account.call{value: refundAmount}("");
                 // Revert if the address has a malicious receive function
@@ -203,7 +199,12 @@ contract RefundableDutchAuction is ERC721 {
         if (msg.sender != mintingOwner) {
             revert AccessControl();
         }
-        if (!(_params.startPrice >= _params.endPrice && _params.endPrice > 0 && _params.startTime > 0 && _params.timeIncrement > 0)) {
+        if (
+            !(
+                _params.startPrice >= _params.endPrice && _params.endPrice > 0 && _params.startTime > 0
+                    && _params.timeIncrement > 0
+            )
+        ) {
             revert DutchAuctionBadParamsAdmin();
         }
         params = DutchAuctionParams({
@@ -278,4 +279,3 @@ contract RefundableDutchAuction is ERC721 {
         return string(abi.encodePacked(baseTokenURI, Strings.toString(tokenId)));
     }
 }
-

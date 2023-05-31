@@ -12,27 +12,30 @@ import {Strings} from "openzeppelin-contracts/contracts/utils/Strings.sol";
 
 contract WeAreBookPeople is ERC721, ERC2981, MultiOwnable {
     bytes32 public merkleRoot = ""; // Construct this from (address, amount) tuple elements
-    mapping(address => uint) public whitelistRemaining; // Maps user address to their remaining mints if they have minted some but not all of their allocation
+    mapping(address => uint256) public whitelistRemaining; // Maps user address to their remaining mints if they have minted some but not all of their allocation
     mapping(address => bool) public whitelistUsed; // Maps user address to bool, true if user has minted
 
-    uint public totalSupply = 0;
+    uint256 public totalSupply = 0;
     string public baseTokenURI;
 
-    event Mint(address indexed owner, uint indexed tokenId);
+    event Mint(address indexed owner, uint256 indexed tokenId);
 
     constructor() ERC721("We Are Book People", "WABP") {}
 
     /// @notice Mint to the owner
-    function ownerMint(uint amount) external onlyMintingOwner {
+    function ownerMint(uint256 amount) external onlyMintingOwner {
         _mintWithoutValidation(msg.sender, amount);
     }
 
     /// @notice Mint from whitelist allocation
-    function whitelistMint(uint amount, uint totalAllocation, bytes32 leaf, bytes32[] memory proof) external {
+    function whitelistMint(uint256 amount, uint256 totalAllocation, bytes32 leaf, bytes32[] memory proof) external {
         // Create storage element tracking user mints if this is the first mint for them
-        if (!whitelistUsed[msg.sender]) {        
+        if (!whitelistUsed[msg.sender]) {
             // Verify that (msg.sender, amount) correspond to Merkle leaf
-            require(keccak256(abi.encodePacked(msg.sender, totalAllocation)) == leaf, "Sender and amount don't match Merkle leaf");
+            require(
+                keccak256(abi.encodePacked(msg.sender, totalAllocation)) == leaf,
+                "Sender and amount don't match Merkle leaf"
+            );
 
             // Verify that (leaf, proof) matches the Merkle root
             require(verify(merkleRoot, leaf, proof), "Not a valid leaf in the Merkle tree");
@@ -51,8 +54,8 @@ contract WeAreBookPeople is ERC721, ERC2981, MultiOwnable {
     }
 
     /// @notice Perform raw minting
-    function _mintWithoutValidation(address to, uint amount) internal {
-        for (uint i = 0; i < amount; i++) {
+    function _mintWithoutValidation(address to, uint256 amount) internal {
+        for (uint256 i = 0; i < amount; i++) {
             _mint(to, totalSupply);
             emit Mint(to, totalSupply);
             totalSupply += 1;
@@ -80,11 +83,10 @@ contract WeAreBookPeople is ERC721, ERC2981, MultiOwnable {
 
     /// @dev See {IERC165-supportsInterface}.
     function supportsInterface(bytes4 interfaceId) public pure override(ERC721, ERC2981) returns (bool) {
-        return
-            interfaceId == 0x2a55205a || // ERC165 Interface ID for ERC2981
-            interfaceId == 0x01ffc9a7 || // ERC165 Interface ID for ERC165
-            interfaceId == 0x80ac58cd || // ERC165 Interface ID for ERC721
-            interfaceId == 0x5b5e139f; // ERC165 Interface ID for ERC721Metadata
+        return interfaceId == 0x2a55205a // ERC165 Interface ID for ERC2981
+            || interfaceId == 0x01ffc9a7 // ERC165 Interface ID for ERC165
+            || interfaceId == 0x80ac58cd // ERC165 Interface ID for ERC721
+            || interfaceId == 0x5b5e139f; // ERC165 Interface ID for ERC721Metadata
     }
 
     /// @dev See {ERC2981-_setDefaultRoyalty}.
@@ -103,7 +105,7 @@ contract WeAreBookPeople is ERC721, ERC2981, MultiOwnable {
     }
 
     /// @dev See {ERC2981-_resetTokenRoyalty}.
-    function resetTokenRoyalty(uint256 tokenId) external onlyRoyaltyOwner{
+    function resetTokenRoyalty(uint256 tokenId) external onlyRoyaltyOwner {
         _resetTokenRoyalty(tokenId);
     }
 

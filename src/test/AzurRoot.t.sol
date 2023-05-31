@@ -8,8 +8,8 @@ import "forge-std/Test.sol";
 import {AzurRoot} from "../AzurRoot.sol";
 
 interface Book {
-    function ownerOf(uint tokenId) external view returns (address);
-    function transferFrom(address from, address to, uint id) external;
+    function ownerOf(uint256 tokenId) external view returns (address);
+    function transferFrom(address from, address to, uint256 id) external;
     function setApprovalForAll(address spender, bool approved) external;
     function claimFunds(address payable recipient) external;
 }
@@ -40,10 +40,10 @@ contract AzurRootTest is Test {
         // This requires a fork of mainnet
         if (block.timestamp <= 1000) {
             return;
-        } 
+        }
 
         vm.startPrank(user);
-        uint[] memory tokenIds = new uint[](2);
+        uint256[] memory tokenIds = new uint[](2);
         tokenIds[0] = 48;
         tokenIds[1] = 50;
 
@@ -61,11 +61,11 @@ contract AzurRootTest is Test {
         vm.startPrank(user);
         root.burnBooks(tokenIds);
         vm.stopPrank();
-        
+
         vm.warp(block.timestamp + 1 days);
 
         // Burn the azur root, like users will do for avatars
-        vm.expectRevert('NOT_AUTHORIZED');
+        vm.expectRevert("NOT_AUTHORIZED");
         root.burn(0);
         vm.startPrank(user);
         root.setApprovalForAll(address(this), true);
@@ -75,11 +75,11 @@ contract AzurRootTest is Test {
 
     function testClaimFunds() public {
         // Deal funds into the contract
-        uint value = 1 ether;
+        uint256 value = 1 ether;
         vm.deal(address(root), value);
 
         // Then claim them
-        uint prevBalance = address(this).balance;
+        uint256 prevBalance = address(this).balance;
         root.claimFunds(payable(address(this)));
         assertEq(address(this).balance - prevBalance, value);
     }
