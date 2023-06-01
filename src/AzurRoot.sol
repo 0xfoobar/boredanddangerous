@@ -3,6 +3,7 @@
 pragma solidity ^0.8.20;
 
 import {MultiOwnable} from "./MultiOwnable.sol";
+import {IDelegationRegistry} from "./IDelegationRegistry.sol";
 
 import {ERC721} from "solmate/tokens/ERC721.sol";
 import {ERC2981} from "openzeppelin-contracts/contracts/token/common/ERC2981.sol";
@@ -30,6 +31,9 @@ contract AzurRoot is DefaultOperatorFilterer, ERC721, ERC2981, MultiOwnable {
 
     /// @notice Whether the burning is open
     bool public burnOpen;
+
+    /// @notice The delegation registry for burning root authentication
+    IDelegationRegistry public constant delegationRegistry = IDelegationRegistry(0x00000000000076A84feF008CDAbe6409d2FE638B);
 
     /// @notice Emitted when a token is minted
     event Mint(address indexed owner, uint256 indexed tokenId);
@@ -94,7 +98,8 @@ contract AzurRoot is DefaultOperatorFilterer, ERC721, ERC2981, MultiOwnable {
     /// @notice Burn a root to receive an azurian
     function burnRoots(address azurians, uint256[] calldata rootIds) external payable {
         for (uint256 i = 0; i < rootIds.length; ++i) {
-            if (msg.sender != ownerOf(rootIds[i])) {
+            address rootOwner = ownerOf(rootIds[i]);
+            if (!(msg.sender == rootOwner || delegationRegistry.checkDelegateForToken(msg.sender, rootOwner, address(this), rootIds[i]))) {
                 revert BurnAuthentication();
             }
             _burn(rootIds[i]);
