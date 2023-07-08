@@ -5,7 +5,7 @@ libs = ['lib']
 
 solc_version = "0.8.20"
 evm_version = "shanghai"
-optimizer_runs = 200
+optimizer_runs = 9_999
 bytecode_hash = "none"
 # via_ir = true
 
