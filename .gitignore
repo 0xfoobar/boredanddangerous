@@ -1,6 +1,5 @@
 cache/
 out/
 .DS_Store
-Makefile
 broadcast/
 refund/

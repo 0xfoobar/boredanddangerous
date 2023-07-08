@@ -5,9 +5,9 @@ import "ds-test/test.sol";
 import "forge-std/console2.sol";
 import "forge-std/Test.sol";
 
-import {AzurRoot} from "../AzurRoot.sol";
-import {Azurian} from "../Azurian.sol";
-import {IDelegationRegistry} from "../IDelegationRegistry.sol";
+import {AzurRoot} from "src/AzurRoot.sol";
+import {Azurian} from "src/Azurian.sol";
+import {IDelegationRegistry} from "src/IDelegationRegistry.sol";
 
 interface Book {
     function ownerOf(uint256 tokenId) external view returns (address);

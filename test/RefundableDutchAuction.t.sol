@@ -5,7 +5,7 @@ import "ds-test/test.sol";
 import "forge-std/console2.sol";
 import "forge-std/Test.sol";
 
-import {RefundableDutchAuction} from "../RefundableDutchAuction.sol";
+import {RefundableDutchAuction} from "src/RefundableDutchAuction.sol";
 
 interface IERC721 {
     function ownerOf(uint256 tokenId) external view returns (address);

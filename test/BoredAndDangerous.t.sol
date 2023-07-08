@@ -7,8 +7,8 @@ import "forge-std/Test.sol";
 
 import {Merkle} from "murky/Merkle.sol";
 
-import {BoredAndDangerous} from "../BoredAndDangerous.sol";
-import {BoredAndDangerousBatchHelper} from "../BoredAndDangerousBatchHelper.sol";
+import {BoredAndDangerous} from "src/BoredAndDangerous.sol";
+import {BoredAndDangerousBatchHelper} from "src/BoredAndDangerousBatchHelper.sol";
 
 interface IERC721 {
     function ownerOf(uint256 tokenId) external view returns (address);
