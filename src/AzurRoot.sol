@@ -16,7 +16,7 @@ interface IERC721 {
 }
 
 interface IAzurian {
-    function burnRootAndMint(uint256[] calldata rootIds) external payable;
+    function burnRootAndMint(uint256[] calldata rootIds) external;
 }
 
 contract AzurRoot is DefaultOperatorFilterer, ERC721, ERC2981, MultiOwnable {
@@ -96,7 +96,7 @@ contract AzurRoot is DefaultOperatorFilterer, ERC721, ERC2981, MultiOwnable {
     }
 
     /// @notice Burn a root to receive an azurian
-    function burnRoots(address azurians, uint256[] calldata rootIds) external payable {
+    function burnRoots(address azurians, uint256[] calldata rootIds) external {
         for (uint256 i = 0; i < rootIds.length; ++i) {
             address rootOwner = ownerOf(rootIds[i]);
             if (!(msg.sender == rootOwner || delegationRegistry.checkDelegateForToken(msg.sender, rootOwner, address(this), rootIds[i]))) {
@@ -104,7 +104,7 @@ contract AzurRoot is DefaultOperatorFilterer, ERC721, ERC2981, MultiOwnable {
             }
             _burn(rootIds[i]);
         }
-        IAzurian(azurians).burnRootAndMint{value: msg.value}(rootIds);
+        IAzurian(azurians).burnRootAndMint(rootIds);
     }
 
     /////////////////////////
