@@ -12,7 +12,7 @@ import {DefaultOperatorFilterer} from "operator-filter-registry/DefaultOperatorF
 import {IAzurian} from "./AzurRoot.sol";
 
 contract Azurian is IAzurian, DefaultOperatorFilterer, ERC721, ERC2981, MultiOwnable {
-    /// @notice The bored and dangerous contract
+    /// @notice The azur root contract
     address public immutable ROOT;
 
     /// @notice Total number of tokens which have minted
