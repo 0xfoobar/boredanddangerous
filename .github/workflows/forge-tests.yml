@@ -20,4 +20,4 @@ jobs:
         # env:
         #   ALCHEMY_API_KEY: ${{ secrets.ALCHEMY_API_KEY }}
         # run: forge test --fork-url "https://eth-mainnet.alchemyapi.io/v2/$ALCHEMY_API_KEY"
-        run: forge test -vvv
+        run: forge test --fork-url https://eth.llamarpc.com -vvv
