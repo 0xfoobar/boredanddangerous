@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.21;
 
 import {MultiOwnable} from "./MultiOwnable.sol";
 
@@ -29,6 +29,9 @@ contract Azurian is IAzurian, DefaultOperatorFilterer, ERC721, ERC2981, MultiOwn
 
     /// @notice Thrown when an ether transfer fails
     error FailedToSendEther();
+
+    /// @notice Thrown when metadata is queried for a nonexistent token
+    error TokenDoesNotExist();
 
     constructor(address _root) ERC721("Azurian", "AZUR") {
         ROOT = _root;
@@ -63,18 +66,6 @@ contract Azurian is IAzurian, DefaultOperatorFilterer, ERC721, ERC2981, MultiOwn
             revert AccessControl();
         }
         mintOpen = _mintOpen;
-    }
-
-    /// @notice Claim funds
-    function claimFunds(address payable recipient) external {
-        if (!(msg.sender == mintingOwner || msg.sender == metadataOwner || msg.sender == royaltyOwner)) {
-            revert AccessControl();
-        }
-
-        (bool sent,) = recipient.call{value: address(this).balance}("");
-        if (!sent) {
-            revert FailedToSendEther();
-        }
     }
 
     // ROYALTY FUNCTIONALITY
@@ -123,6 +114,7 @@ contract Azurian is IAzurian, DefaultOperatorFilterer, ERC721, ERC2981, MultiOwn
 
     /// @notice Returns the metadata URI for a given token
     function tokenURI(uint256 tokenId) public view override returns (string memory) {
+        if (_ownerOf[tokenId] == address(0)) revert TokenDoesNotExist();
         return string(abi.encodePacked(baseTokenURI, Strings.toString(tokenId)));
     }
 

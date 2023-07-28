@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.21;
 
 import "ds-test/test.sol";
 import "forge-std/console2.sol";
@@ -106,16 +106,5 @@ contract AzurianTest is Test {
         // Test that roots are burned
         vm.expectRevert();
         root.ownerOf(tokenIds[0]);
-    }
-
-    function testClaimFunds() public {
-        // Deal funds into the contract
-        uint256 value = 1 ether;
-        vm.deal(address(azurian), value);
-
-        // Then claim them
-        uint256 prevBalance = address(this).balance;
-        azurian.claimFunds(payable(address(this)));
-        assertEq(address(this).balance - prevBalance, value);
     }
 }
